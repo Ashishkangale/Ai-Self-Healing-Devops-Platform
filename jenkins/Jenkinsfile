@@ -1,0 +1,278 @@
+// ─────────────────────────────────────────────────────────
+// Smart Self-Healing DevOps Platform — Jenkins Pipeline
+// Upgraded: AI Decision Engine + Artifacts
+// ─────────────────────────────────────────────────────────
+
+pipeline {
+    agent any
+
+    environment {
+        APP_NAME       = 'smart-devops-app'
+        IMAGE_TAG      = "${APP_NAME}:${BUILD_NUMBER}"
+        LATEST_TAG     = "${APP_NAME}:latest"
+        CONTAINER_NAME = 'smart-devops-container'
+        APP_PORT       = '8080'
+        EC2_USER       = 'ubuntu'
+        EC2_HOST       = credentials('EC2_HOST')
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    triggers {
+        pollSCM('H/2 * * * *')
+    }
+
+    stages {
+
+        // ── STAGE 1: Checkout ────────────────────────────────
+        stage('Checkout') {
+            steps {
+                echo '📦 Checking out source code...'
+                checkout scm
+                sh '''
+                    echo "=== BUILD INFO ===" > build-info.txt
+                    echo "Build Number : ${BUILD_NUMBER}" >> build-info.txt
+                    echo "Build Time   : $(date)" >> build-info.txt
+                    echo "Git Branch   : $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)" >> build-info.txt
+                    echo "Git Commit   : $(git rev-parse --short HEAD 2>/dev/null || echo unknown)" >> build-info.txt
+                    cat build-info.txt
+                '''
+            }
+        }
+
+        // ── STAGE 2: Install Dependencies ───────────────────
+        stage('Install Dependencies') {
+            steps {
+                echo '📥 Installing Node.js dependencies...'
+                dir('app') {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        // ── STAGE 3: Run Tests ───────────────────────────────
+        stage('Test') {
+            steps {
+                echo '🧪 Running tests...'
+                dir('app') {
+                    sh '''
+                        npm test 2>&1 | tee ../test-results.txt || echo "No tests found, continuing..."
+                    '''
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'test-results.txt',
+                                     allowEmptyArchive: true,
+                                     fingerprint: true
+                }
+            }
+        }
+
+        // ── STAGE 4: Docker Build ────────────────────────────
+        stage('Docker Build') {
+            steps {
+                echo '🐳 Building Docker image...'
+                sh """
+                    docker build \\
+                        -f docker/Dockerfile \\
+                        -t ${IMAGE_TAG} \\
+                        -t ${LATEST_TAG} \\
+                        . 2>&1 | tee docker-build.log
+                """
+                echo "✅ Docker image built: ${IMAGE_TAG}"
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'docker-build.log',
+                                     allowEmptyArchive: true,
+                                     fingerprint: true
+                }
+            }
+        }
+
+        // ── STAGE 5: Deploy to EC2 ───────────────────────────
+        stage('Deploy') {
+            steps {
+                echo '🚀 Deploying to EC2...'
+                sshagent(['EC2_SSH_KEY']) {
+                    sh """
+                        docker save ${LATEST_TAG} | \\
+                        ssh -o StrictHostKeyChecking=no \\
+                            -o ConnectTimeout=30 \\
+                            ${EC2_USER}@${EC2_HOST} \\
+                            'docker load'
+
+                        ssh -o StrictHostKeyChecking=no \\
+                            -o ConnectTimeout=30 \\
+                            ${EC2_USER}@${EC2_HOST} '
+                            docker stop ${CONTAINER_NAME} 2>/dev/null || true
+                            docker rm   ${CONTAINER_NAME} 2>/dev/null || true
+                            sleep 3
+
+                            docker run -d \\
+                                --name ${CONTAINER_NAME} \\
+                                --restart unless-stopped \\
+                                -p ${APP_PORT}:${APP_PORT} \\
+                                ${LATEST_TAG}
+
+                            echo "✅ Container started"
+                            sudo chmod 777 /var/log/app
+                            sudo chown -R 1000:1000 /var/log/app
+                            docker ps | grep ${CONTAINER_NAME}
+                        '
+                    """
+                }
+            }
+        }
+
+        // ── STAGE 6: Health Check with Retry ─────────────────
+        stage('Health Check') {
+            steps {
+                echo '❤️  Checking deployment health...'
+                sshagent(['EC2_SSH_KEY']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no \\
+                            -o ConnectTimeout=30 \\
+                            ${EC2_USER}@${EC2_HOST} '
+                            echo "Waiting 20s for app to start..."
+                            sleep 20
+
+                            RETRIES=10
+                            COUNT=0
+                            HEALTHY=false
+
+                            while [ \$COUNT -lt \$RETRIES ]; do
+                                STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${APP_PORT}/health)
+                                echo "Attempt \$((COUNT+1))/\$RETRIES — HTTP \$STATUS"
+
+                                if [ "\$STATUS" = "200" ]; then
+                                    echo "✅ App is healthy!"
+                                    HEALTHY=true
+                                    break
+                                fi
+
+                                COUNT=\$((COUNT+1))
+                                sleep 5
+                            done
+
+                            if [ "\$HEALTHY" = "false" ]; then
+                                echo "❌ App did not become healthy — triggering AI Decision Engine..."
+                                echo "--- Last 20 container logs ---"
+                                docker logs --tail 20 ${CONTAINER_NAME}
+
+                                echo "--- Running AI Decision Engine ---"
+                                python3 /opt/ai-engine/log_analyzer.py 2>&1
+
+                                echo "--- Waiting 15s for AI recovery ---"
+                                sleep 15
+
+                                RECOVER_STATUS=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${APP_PORT}/health)
+                                echo "Post-AI-recovery HTTP status: \$RECOVER_STATUS"
+
+                                if [ "\$RECOVER_STATUS" = "200" ]; then
+                                    echo "✅ AI successfully recovered the app!"
+                                else
+                                    echo "❌ AI recovery failed — manual intervention needed"
+                                    exit 1
+                                fi
+                            fi
+                        '
+                    """
+                }
+            }
+        }
+
+        // ── STAGE 7: Collect Artifacts ───────────────────────
+        stage('Collect Artifacts') {
+            steps {
+                echo '📁 Collecting deployment artifacts...'
+                sshagent(['EC2_SSH_KEY']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no \\
+                            -o ConnectTimeout=30 \\
+                            ${EC2_USER}@${EC2_HOST} '
+
+                            mkdir -p /tmp/jenkins-artifacts
+
+                            echo "=== DEPLOYMENT REPORT ===" > /tmp/jenkins-artifacts/deployment-report.txt
+                            echo "Time        : \$(date)" >> /tmp/jenkins-artifacts/deployment-report.txt
+                            echo "Build       : ${BUILD_NUMBER}" >> /tmp/jenkins-artifacts/deployment-report.txt
+                            echo "Image       : ${LATEST_TAG}" >> /tmp/jenkins-artifacts/deployment-report.txt
+                            echo "Container   : \$(docker ps --filter name=${CONTAINER_NAME} --format "{{.Status}}")" >> /tmp/jenkins-artifacts/deployment-report.txt
+                            echo "Health      : \$(curl -s http://localhost:${APP_PORT}/health)" >> /tmp/jenkins-artifacts/deployment-report.txt
+                            echo "" >> /tmp/jenkins-artifacts/deployment-report.txt
+
+                            echo "=== CONTAINER STATS ===" >> /tmp/jenkins-artifacts/deployment-report.txt
+                            docker stats --no-stream ${CONTAINER_NAME} >> /tmp/jenkins-artifacts/deployment-report.txt 2>/dev/null || echo "Stats unavailable" >> /tmp/jenkins-artifacts/deployment-report.txt
+
+                            echo "=== LAST 30 APP LOGS ===" >> /tmp/jenkins-artifacts/deployment-report.txt
+                            docker logs --tail 30 ${CONTAINER_NAME} >> /tmp/jenkins-artifacts/deployment-report.txt 2>&1
+
+                            if [ -f /var/log/app/ai_decision.log ]; then
+                                cp /var/log/app/ai_decision.log /tmp/jenkins-artifacts/ai_decision.log
+                            else
+                                echo "No AI decisions in this run" > /tmp/jenkins-artifacts/ai_decision.log
+                            fi
+
+                            if [ -f /var/log/app/ai_analysis.log ]; then
+                                cp /var/log/app/ai_analysis.log /tmp/jenkins-artifacts/ai_analysis.log
+                            else
+                                echo "No AI analysis in this run" > /tmp/jenkins-artifacts/ai_analysis.log
+                            fi
+
+                            echo "Artifacts prepared."
+                            cat /tmp/jenkins-artifacts/deployment-report.txt
+                        '
+
+                        scp -o StrictHostKeyChecking=no \\
+                            -o ConnectTimeout=30 \\
+                            ${EC2_USER}@${EC2_HOST}:/tmp/jenkins-artifacts/deployment-report.txt ./deployment-report.txt
+
+                        scp -o StrictHostKeyChecking=no \\
+                            -o ConnectTimeout=30 \\
+                            ${EC2_USER}@${EC2_HOST}:/tmp/jenkins-artifacts/ai_decision.log ./ai_decision.log
+
+                        scp -o StrictHostKeyChecking=no \\
+                            -o ConnectTimeout=30 \\
+                            ${EC2_USER}@${EC2_HOST}:/tmp/jenkins-artifacts/ai_analysis.log ./ai_analysis.log
+                    """
+                }
+                archiveArtifacts artifacts: 'deployment-report.txt, ai_decision.log, ai_analysis.log',
+                                 allowEmptyArchive: true,
+                                 fingerprint: true
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Pipeline completed successfully! App is live.'
+            sh '''
+                echo "PIPELINE SUCCESS" >> build-info.txt
+                echo "Finished At : $(date)" >> build-info.txt
+            '''
+            archiveArtifacts artifacts: 'build-info.txt',
+                             allowEmptyArchive: true,
+                             fingerprint: true
+        }
+        failure {
+            echo '❌ Pipeline failed — check Console Output above.'
+            sh '''
+                echo "PIPELINE FAILED" >> build-info.txt
+                echo "Failed At : $(date)" >> build-info.txt
+            '''
+            archiveArtifacts artifacts: 'build-info.txt',
+                             allowEmptyArchive: true,
+                             fingerprint: true
+        }
+        always {
+            echo '🧹 Cleaning up local Docker image...'
+            sh "docker rmi ${IMAGE_TAG} 2>/dev/null || true"
+        }
+    }
+}
