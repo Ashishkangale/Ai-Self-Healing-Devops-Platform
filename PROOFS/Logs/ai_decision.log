@@ -1,0 +1,32 @@
+============================================================
+AI DECISION — 2026-05-06 18:38:01
+Source        : rule-based
+============================================================
+ACTION        : redeploy
+PROBLEM       : Persistent unknown failure
+SEVERITY      : HIGH
+REASON        : No specific pattern matched — doing full redeploy
+PREVENTION    : Enable detailed application error logging
+============================================================
+
+============================================================
+AI DECISION — 2026-05-06 18:39:53
+Source        : rule-based
+============================================================
+ACTION        : port_fix
+PROBLEM       : Port 8080 is occupied by another process
+SEVERITY      : HIGH
+REASON        : Port conflict detected in logs or active PIDs found
+PREVENTION    : Always stop old containers before starting new ones
+============================================================
+
+============================================================
+AI DECISION — 2026-05-06 18:35:56
+Source        : rule-based
+============================================================
+ACTION        : restart
+PROBLEM       : Container is stopped or does not exist
+SEVERITY      : HIGH
+REASON        : Container status is 'exited'
+PREVENTION    : Use --restart unless-stopped flag in docker run
+============================================================

@@ -1,0 +1,91 @@
+
+============================================================
+AI Decision Engine started — 2026-05-06 18:38:01
+============================================================
+Container status :
+Port 8080 PIDs   : ''
+Anomaly score    : 0
+Consulting Anthropic Claude for decision...
+Claude API error: No module named 'anthropic'
+Falling back to rule-based decision...
+
+============================================================
+AI DECISION ENGINE — 2026-05-06 18:38:01
+Source    : rule-based
+============================================================
+ACTION    : REDEPLOY
+PROBLEM   : Persistent unknown failure
+SEVERITY  : HIGH
+REASON    : No specific pattern matched — doing full redeploy
+PREVENTION: Enable detailed application error logging
+============================================================
+
+
+>>> EXECUTING ACTION: REDEPLOY
+Action: Full redeploy — stop, remove, fresh start...
+Error response from daemon: No such container: smart-devops-container
+Error response from daemon: No such container: smart-devops-container
+8f85d29de3e90b414a69521450c54ae684dcdc44aed801c7d68bef210b1f6133
+
+
+============================================================
+AI Decision Engine started — 2026-05-06 18:39:53
+============================================================
+Container status :
+Port 8080 PIDs   : '22663'
+Anomaly score    : 0
+Consulting Anthropic Claude for decision...
+Claude API error: No module named 'anthropic'
+Falling back to rule-based decision...
+
+============================================================
+AI DECISION ENGINE — 2026-05-06 18:39:53
+Source    : rule-based
+============================================================
+ACTION    : PORT_FIX
+PROBLEM   : Port 8080 is occupied by another process
+SEVERITY  : HIGH
+REASON    : Port conflict detected in logs or active PIDs found
+PREVENTION: Always stop old containers before starting new ones
+============================================================
+
+
+>>> EXECUTING ACTION: PORT_FIX
+Action: Killing processes on port 8080...
+  Killed PID 22663
+Error response from daemon: No such container: smart-devops-container
+Error response from daemon: No such container: smart-devops-container
+bc3f3ce1beee94f0faf0ef6fe92caabfcd1f79e15bc826c11e2252c8cb8f2c75
+
+✅ Recovery verified — app is responding on port 8080
+[1]+  Killed                  nc -lk 8080
+
+
+
+============================================================
+AI Decision Engine started — 2026-05-06 18:33:51
+============================================================
+Container status : exited
+Port 8080 PIDs   : ''
+Anomaly score    : 0
+Consulting Anthropic Claude for decision...
+Claude API error: No module named 'anthropic'
+Falling back to rule-based decision...
+
+============================================================
+AI DECISION ENGINE — 2026-05-06 18:33:52
+Source    : rule-based
+============================================================
+ACTION    : RESTART
+PROBLEM   : Container is stopped or does not exist
+SEVERITY  : HIGH
+REASON    : Container status is 'exited'
+PREVENTION: Use --restart unless-stopped flag in docker run
+============================================================
+
+
+>>> EXECUTING ACTION: RESTART
+Action: Starting stopped container...
+smart-devops-container
+
+✅ Recovery verified — app is responding on port 8080

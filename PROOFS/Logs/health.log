@@ -1,0 +1,57 @@
+smart-devops-container
+[2026-05-06 20:07:01] [OK]    ✅ App is healthy (HTTP 200)
+[2026-05-06 20:07:01] [OK]    ✅ App is healthy (HTTP 200)
+[2026-05-06 20:07:01] [INFO]  ─── Health Check Complete: HEALTHY ─────────
+[2026-05-06 20:07:01] [INFO]  ─── Health Check Complete: HEALTHY ─────────
+[2026-05-06 20:13:01] [INFO]  ─── Health Check Started ───────────────────
+[2026-05-06 20:13:01] [INFO]  ─── Health Check Started ───────────────────
+[2026-05-06 20:13:01] [OK]    ✅ App is healthy (HTTP 200)
+[2026-05-06 20:13:01] [OK]    ✅ App is healthy (HTTP 200)
+[2026-05-06 20:13:01] [INFO]  ─── Health Check Complete: HEALTHY ─────────
+[2026-05-06 20:13:01] [INFO]  ─── Health Check Complete: HEALTHY ─────────
+[2026-05-06 20:14:01] [INFO]  ─── Health Check Started ───────────────────
+[2026-05-06 20:14:01] [INFO]  ─── Health Check Started ───────────────────
+[2026-05-06 20:14:01] [INFO]  Attempt 1/3 — HTTP 000000
+[2026-05-06 20:14:01] [INFO]  Attempt 1/3 — HTTP 000000
+[2026-05-06 20:14:06] [INFO]  Attempt 2/3 — HTTP 000000
+[2026-05-06 20:14:06] [INFO]  Attempt 2/3 — HTTP 000000
+[2026-05-06 20:14:11] [INFO]  Attempt 3/3 — HTTP 000000
+[2026-05-06 20:14:11] [INFO]  Attempt 3/3 — HTTP 000000
+[2026-05-06 20:14:16] [ERROR] ❌ App is DOWN after 3 retries — calling AI Decision Engine...
+[2026-05-06 20:14:16] [ERROR] ❌ App is DOWN after 3 retries — calling AI Decision Engine...
+[2026-05-06 20:14:16] [INFO]  Launching log_analyzer.py...
+[2026-05-06 20:14:16] [INFO]  Launching log_analyzer.py...
+smart-devops-container
+
+============================================================
+AI Decision Engine started — 2026-05-06 20:14:16
+============================================================
+Container status : exited
+Port 8080 PIDs   : ''
+Anomaly score    : 8
+Falling back to rule-based decision...
+
+============================================================
+AI DECISION ENGINE — 2026-05-06 20:14:16
+Source    : rule-based
+============================================================
+ACTION    : RESTART
+PROBLEM   : Container is stopped or does not exist
+SEVERITY  : HIGH
+REASON    : Container status is 'exited'
+PREVENTION: Use --restart unless-stopped flag in docker run
+============================================================
+
+
+>>> EXECUTING ACTION: RESTART
+Action: Starting stopped container...
+
+✅ Recovery verified — app is responding on port 8080
+[2026-05-06 20:14:24] [INFO]  ─── Health Check Complete: RECOVERY ATTEMPTED ───
+[2026-05-06 20:14:24] [INFO]  ─── Health Check Complete: RECOVERY ATTEMPTED ───
+[2026-05-06 20:15:01] [INFO]  ─── Health Check Started ───────────────────
+[2026-05-06 20:15:01] [INFO]  ─── Health Check Started ───────────────────
+[2026-05-06 20:15:01] [OK]    ✅ App is healthy (HTTP 200)
+[2026-05-06 20:15:01] [OK]    ✅ App is healthy (HTTP 200)
+[2026-05-06 20:15:01] [INFO]  ─── Health Check Complete: HEALTHY ─────────
+[2026-05-06 20:15:01] [INFO]  ─── Health Check Complete: HEALTHY ─────────
