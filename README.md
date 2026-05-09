@@ -331,7 +331,7 @@ This project focuses on intelligent decision-making during failures.
 
 # 🌟 Key Highlights
 
-> Built an AI-powered self-healing DevOps platform using Docker, Jenkins, Terraform, AWS EC2, and Python that automatically detects, analyzes, predicts, and recovers from infrastructure and application failures using intelligent decision-based automation.
+ Built an AI-powered self-healing DevOps platform using Docker, Jenkins, Terraform, AWS EC2, and Python that automatically detects, analyzes, predicts, and recovers from infrastructure and application failures using intelligent decision-based automation.
 
 ---
 
