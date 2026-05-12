@@ -28,7 +28,7 @@ pipeline {
 
     stages {
 
-        // ── STAGE 1: Checkout ────────────────────────────────
+// CHECKOUT STAGE
         stage('Checkout') {
             steps {
                 echo '📦 Checking out source code...'
@@ -44,7 +44,7 @@ pipeline {
             }
         }
 
-        // ── STAGE 2: Install Dependencies ───────────────────
+// INSTALL DEPENDENCIES STAGE
         stage('Install Dependencies') {
             steps {
                 echo '📥 Installing Node.js dependencies...'
@@ -54,7 +54,7 @@ pipeline {
             }
         }
 
-        // ── STAGE 3: Run Tests ───────────────────────────────
+// TESTING STAGE
         stage('Test') {
             steps {
                 echo '🧪 Running tests...'
@@ -73,7 +73,7 @@ pipeline {
             }
         }
 
-        // ── STAGE 4: Docker Build ────────────────────────────
+// DOCKER BUILDING STAGE
         stage('Docker Build') {
             steps {
                 echo '🐳 Building Docker image...'
@@ -95,7 +95,7 @@ pipeline {
             }
         }
 
-        // ── STAGE 5: Deploy to EC2 ───────────────────────────
+// DEPLOY ON EC2
         stage('Deploy') {
             steps {
                 echo '🚀 Deploying to EC2...'
@@ -130,7 +130,7 @@ pipeline {
             }
         }
 
-        // ── STAGE 6: Health Check with Retry ─────────────────
+// HEALTH SHECKING STAGE
         stage('Health Check') {
             steps {
                 echo '❤️  Checking deployment health...'
@@ -187,7 +187,7 @@ pipeline {
             }
         }
 
-        // ── STAGE 7: Collect Artifacts ───────────────────────
+// COLLECTING ARTIFACTS
         stage('Collect Artifacts') {
             steps {
                 echo '📁 Collecting deployment artifacts...'
