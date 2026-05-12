@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-# ─── Config ────────────────────────────────────────────────────
+# CONFIGURATION
 CONTAINER_NAME="smart-devops-container"
 APP_IMAGE="smart-devops-app:latest"
 APP_PORT="8080"
@@ -15,7 +15,7 @@ LOG_FILE="/var/log/app/autofix.log"
 MAX_WAIT=60     # seconds to wait for recovery
 SLACK_WEBHOOK="${SLACK_WEBHOOK_URL:-}"
 
-# ─── Logging ───────────────────────────────────────────────────
+# LOGGING
 timestamp() { date '+%Y-%m-%d %H:%M:%S'; }
 log()  { echo "[$(timestamp)] [FIX]   $*" | tee -a "$LOG_FILE"; }
 ok()   { echo "[$(timestamp)] [OK]    ✅ $*" | tee -a "$LOG_FILE"; }
@@ -23,7 +23,7 @@ err()  { echo "[$(timestamp)] [ERROR] ❌ $*" | tee -a "$LOG_FILE"; }
 
 mkdir -p "$(dirname "$LOG_FILE")"
 
-# ─── Slack Notification ────────────────────────────────────────
+# SLACK NOTIFICATION
 notify_slack() {
     local message="$1"
     local color="${2:-warning}"
@@ -35,7 +35,7 @@ notify_slack() {
     fi
 }
 
-# ─── Wait for App to Be Healthy ─────────────────────────────────
+# WAIT FOR APP HEALTHY
 wait_for_health() {
     local elapsed=0
     log "Waiting up to ${MAX_WAIT}s for app to become healthy..."
@@ -57,7 +57,7 @@ wait_for_health() {
     return 1
 }
 
-# ─── FIX STRATEGY 1: Restart Container ────────────────────────
+# STRATEGY 1 : RESTART CONTAINER
 fix_restart_container() {
     log "Strategy 1: Restarting container..."
 
@@ -75,7 +75,7 @@ fix_restart_container() {
     fi
 }
 
-# ─── FIX STRATEGY 2: Pull Latest Image and Redeploy ───────────
+# # STRATEGY 1 : PULL LATEST IMAGE AND REDEPLOY
 fix_redeploy() {
     log "Strategy 2: Pulling latest image and redeploying..."
 
@@ -93,7 +93,7 @@ fix_redeploy() {
     ok "Redeployed with latest image"
 }
 
-# ─── FIX STRATEGY 3: Clean Up and Reset ───────────────────────
+# # STRATEGY 1 : CLEAN UP AND RESET
 fix_clean_reset() {
     log "Strategy 3: Full cleanup and reset..."
 
@@ -110,7 +110,7 @@ fix_clean_reset() {
     ok "Clean reset complete"
 }
 
-# ─── Main Recovery Flow ────────────────────────────────────────
+# RECOVERY FLOW
 main() {
     log "═══════════════════════════════════════════"
     log "  AUTO-FIX STARTED"
@@ -118,7 +118,7 @@ main() {
 
     notify_slack "Auto-fix triggered. Attempting recovery..." "warning"
 
-    # ── Attempt 1: Restart ───────────────────
+# ATTEMPT 1 : RESTART
     fix_restart_container
     if wait_for_health; then
         ok "Recovery successful after Strategy 1 (Restart)"
@@ -126,7 +126,7 @@ main() {
         exit 0
     fi
 
-    # ── Attempt 2: Redeploy ──────────────────
+# ATTEMPT 1 : REDEPLOY
     log "Strategy 1 failed. Trying redeploy..."
     fix_redeploy
     if wait_for_health; then
@@ -135,7 +135,7 @@ main() {
         exit 0
     fi
 
-    # ── Attempt 3: Clean Reset ───────────────
+# ATTEMPT 1 : CLEAN RESET
     log "Strategy 2 failed. Trying clean reset..."
     fix_clean_reset
     if wait_for_health; then
@@ -144,7 +144,7 @@ main() {
         exit 0
     fi
 
-    # ── All strategies failed ────────────────
+# ALL STRATEGIES FAILED 
     err "ALL AUTO-FIX STRATEGIES FAILED. Manual intervention required!"
     notify_slack "⚠️ ALL auto-fix strategies FAILED. Manual intervention required!" "danger"
     exit 1
