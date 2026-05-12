@@ -139,7 +139,6 @@ def _save_fix_history(results: list):
 if __name__ == "__main__":
     import sys
 
-    # Accept analysis text from stdin or argument
     if len(sys.argv) > 1:
         analysis = " ".join(sys.argv[1:])
     else:
