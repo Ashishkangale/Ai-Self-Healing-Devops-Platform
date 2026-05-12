@@ -26,7 +26,7 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# ─── VPC + NETWORKING (this is the fix) ──────────────────────────────────────
+# VPC AND NETWORKING
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
@@ -78,7 +78,7 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# ─── SECURITY GROUP ──────────────────────────────────────────────────────────
+# SECURITY GROUP
 
 resource "aws_security_group" "app_sg" {
   name        = "smart-devops-platform-sg"
@@ -131,7 +131,7 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# ─── SSH KEY ─────────────────────────────────────────────────────────────────
+# SSH KEY
 
 resource "aws_key_pair" "deployer" {
   key_name   = "smart-devops-platform-key"
@@ -143,7 +143,7 @@ resource "aws_key_pair" "deployer" {
   }
 }
 
-# ─── EC2 INSTANCE ────────────────────────────────────────────────────────────
+# EC2 INSTANCE
 
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.ubuntu.id
@@ -176,7 +176,7 @@ resource "aws_instance" "app_server" {
   }
 }
 
-# ─── ELASTIC IP ──────────────────────────────────────────────────────────────
+# ELASTIC IP
 
 resource "aws_eip" "app_eip" {
   instance = aws_instance.app_server.id
