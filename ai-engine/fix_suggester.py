@@ -18,7 +18,7 @@ APP_PORT        = os.getenv("APP_PORT", "8080")
 FIX_LOG         = "/var/log/app/fix_history.log"
 
 
-# ─── Fix Strategies ─────────────────────────────────────────────────────────
+# FIXING STRATEGIES
 class FixStrategy:
     """Defines a fix action with a name, condition keywords, and shell command."""
 
@@ -59,7 +59,7 @@ class FixStrategy:
         }
 
 
-# ─── Available Fix Strategies ───────────────────────────────────────────────
+# AVALIABLE FIX STRATEGIES
 FIX_STRATEGIES = [
     FixStrategy(
         name        = "Restart Container",
@@ -98,7 +98,7 @@ FIX_STRATEGIES = [
     ),
 ]
 
-# Default fallback
+# DEFAULT FALLBACK
 DEFAULT_FIX = FixStrategy(
     name        = "Default: Restart Container",
     keywords    = [],
@@ -107,7 +107,7 @@ DEFAULT_FIX = FixStrategy(
 )
 
 
-# ─── Suggest & Execute Fix ──────────────────────────────────────────────────
+# SUGGEST AND EXECUTE
 def suggest_and_fix(analysis_text: str) -> list:
     """Match analysis to fix strategies and execute them."""
     matched = [s for s in FIX_STRATEGIES if s.matches(analysis_text)]
@@ -126,7 +126,7 @@ def suggest_and_fix(analysis_text: str) -> list:
     return results
 
 
-# ─── Save Fix History ───────────────────────────────────────────────────────
+# SAVE FIX HISTORY
 def _save_fix_history(results: list):
     Path(FIX_LOG).parent.mkdir(parents=True, exist_ok=True)
     with open(FIX_LOG, "a") as f:
@@ -135,7 +135,7 @@ def _save_fix_history(results: list):
     print(f"\n📁 Fix history saved to {FIX_LOG}")
 
 
-# ─── Entry Point ────────────────────────────────────────────────────────────
+# ENTRY POINT
 if __name__ == "__main__":
     import sys
 
